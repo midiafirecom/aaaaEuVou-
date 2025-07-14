@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vídeo em Tela Cheia</title>
+    <title>Vídeo em Tela Cheia com Áudio</title>
     <style>
         * {
             margin: 0;
@@ -14,6 +14,7 @@
         body, html {
             height: 100%;
             width: 100%;
+            background-color: #000;
         }
         
         #fullscreen-video {
@@ -42,22 +43,57 @@
         }
         
         button {
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.7);
             color: white;
             border: none;
-            padding: 10px 15px;
-            margin: 0 5px;
+            padding: 12px 20px;
+            margin: 0 8px;
             border-radius: 5px;
             cursor: pointer;
+            font-size: 16px;
+            min-width: 100px;
         }
         
         button:hover {
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.9);
+        }
+        
+        .start-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 200;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .start-message h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        
+        .start-button {
+            background: #4CAF50;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border-radius: 8px;
+        }
+        
+        .start-button:hover {
+            background: #45a049;
         }
     </style>
 </head>
 <body>
-    <video id="fullscreen-video" autoplay loop muted>
+    <video id="fullscreen-video" loop>
         <source src="https://github.com/midiafirecom/aaaaEuVou-/raw/refs/heads/main/83ec48444a1b6ba54dae3a7fe3b3584a.mp4" type="video/mp4">
         Seu navegador não suporta vídeos HTML5.
     </video>
@@ -68,8 +104,26 @@
         <button onclick="toggleFullScreen()">Tela Cheia</button>
     </div>
 
+    <div id="start-message" class="start-message">
+        <h2>Clique no botão abaixo para reproduzir o vídeo com áudio</h2>
+        <button class="start-button" onclick="startVideo()">Reproduzir Vídeo</button>
+    </div>
+
     <script>
         const video = document.getElementById('fullscreen-video');
+        const startMessage = document.getElementById('start-message');
+        
+        // Configurações iniciais
+        video.muted = false; // Áudio habilitado
+        
+        function startVideo() {
+            startMessage.style.display = 'none';
+            video.play().catch(e => {
+                console.error("Erro ao reproduzir:", e);
+                startMessage.innerHTML = '<h2>Erro ao reproduzir o vídeo. Por favor, atualize a página e tente novamente.</h2>';
+                startMessage.style.display = 'flex';
+            });
+        }
         
         function togglePlay() {
             if (video.paused) {
@@ -81,46 +135,39 @@
         
         function toggleMute() {
             video.muted = !video.muted;
+            // Atualiza o texto do botão
+            const muteButton = document.querySelector('.controls button:nth-child(2)');
+            muteButton.textContent = video.muted ? 'Ativar Áudio' : 'Desativar Áudio';
         }
         
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
-                video.requestFullscreen().catch(err => {
-                    alert(`Erro ao tentar entrar em tela cheia: ${err.message}`);
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Erro ao tentar entrar em tela cheia: ${err.message}`);
                 });
             } else {
-                document.exitFullscreen();
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
             }
         }
         
         // Teclas de atalho
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') togglePlay();
+            if (e.code === 'Space') {
+                e.preventDefault();
+                togglePlay();
+            }
             if (e.code === 'KeyM') toggleMute();
             if (e.code === 'KeyF') toggleFullScreen();
         });
 
-        // Tentar reproduzir automaticamente (pode não funcionar em alguns navegadores)
-        video.play().catch(e => {
+        // Verifica se o vídeo já pode ser reproduzido (pode não funcionar devido a políticas de autoplay)
+        video.play().then(() => {
+            startMessage.style.display = 'none';
+        }).catch(e => {
             console.log("Reprodução automática bloqueada:", e);
-            // Mostrar instrução se a reprodução automática falhar
-            const msg = document.createElement('div');
-            msg.style.position = 'fixed';
-            msg.style.top = '50%';
-            msg.style.left = '50%';
-            msg.style.transform = 'translate(-50%, -50%)';
-            msg.style.color = 'white';
-            msg.style.backgroundColor = 'rgba(0,0,0,0.7)';
-            msg.style.padding = '20px';
-            msg.style.borderRadius = '10px';
-            msg.style.textAlign = 'center';
-            msg.innerHTML = '<h2>Clique na tela para reproduzir o vídeo</h2>';
-            document.body.appendChild(msg);
-            
-            document.body.addEventListener('click', () => {
-                video.play();
-                msg.remove();
-            }, { once: true });
+            // Mantém a mensagem de início visível
         });
     </script>
 </body>
